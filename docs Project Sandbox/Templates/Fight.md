@@ -5,3 +5,6 @@ Gimmick:
 Location:
 note:
 ---
+## Notes
+
+## Showdown Paste
