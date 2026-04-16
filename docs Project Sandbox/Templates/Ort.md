@@ -1,5 +1,6 @@
 ---
 Teil von:
+Ort Type:
 ---
 ## Suborte
 ``` base

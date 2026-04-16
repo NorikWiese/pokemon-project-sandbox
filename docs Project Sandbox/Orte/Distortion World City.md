@@ -1,5 +1,6 @@
 ---
 Teil von: "[[Maininsel]]"
+Ort Type: City
 ---
 ## Suborte
 ``` base

@@ -1,5 +1,6 @@
 ---
-Teil von:
+Teil von: "[[Pokemon Project Sandbox]]"
+Ort Type: Insel
 ---
 ## Suborte
 ``` base
