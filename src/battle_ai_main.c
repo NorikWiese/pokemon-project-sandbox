@@ -74,6 +74,9 @@ static s32 AI_DynamicFunc(enum BattlerId battlerAtk, enum BattlerId battlerDef, 
 static s32 AI_PredictSwitch(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move, s32 score);
 static s32 AI_CheckPpStall(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move, s32 score);
 
+//Sandbox AI functions
+static s32 AI_Click_All(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move, s32 score);
+
 static s32 (*const sBattleAiFuncTable[])(enum BattlerId, enum BattlerId, enum Move, s32) =
 {
     [0] = AI_CheckBadMove,           // AI_FLAG_CHECK_BAD_MOVE
@@ -110,7 +113,7 @@ static s32 (*const sBattleAiFuncTable[])(enum BattlerId, enum BattlerId, enum Mo
     [31] = NULL,                     // Unused
     [32] = NULL,                     // Unused
     [33] = NULL,                     // Unused
-    [34] = NULL,                     // Unused
+    [34] = AI_Click_All,             // Does Norik get it?
     [35] = NULL,                     // Unused
     [36] = NULL,                     // Unused
     [37] = NULL,                     // Unused
@@ -7333,4 +7336,10 @@ static u32 ChooseMoveOrAction_Doubles_Sandbox(enum BattlerId battler)
     gAiBattleData->chosenTarget[battler] = gBattlerTarget;
 
     return actionOrMoveIndex[gBattlerTarget];
+}
+
+static s32 AI_Click_All(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move, s32 score)
+{
+    score += AI_SCORE_LIKES_CLICKING_STUFF;
+    return score;
 }
