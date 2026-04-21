@@ -40,7 +40,9 @@
 
 static u32 ChooseMoveOrAction(enum BattlerId battler);
 static u32 ChooseMoveOrAction_Singles(enum BattlerId battler);
+static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler);
 static u32 ChooseMoveOrAction_Doubles(enum BattlerId battler);
+static u32 ChooseMoveOrAction_Doubles_Sandbox(enum BattlerId battler);
 static inline void BattleAI_DoAIProcessing(struct AiThinkingStruct *aiThink, enum BattlerId battlerAtk, enum BattlerId battlerDef);
 static inline void BattleAI_DoAIProcessing_PredictedSwitchin(struct AiThinkingStruct *aiThink, struct AiLogicData *aiData, enum BattlerId battlerAtk, enum BattlerId battlerDef);
 static bool32 IsPinchBerryItemEffect(enum HoldEffect holdEffect);
@@ -429,8 +431,12 @@ void ReconsiderGimmick(enum BattlerId battlerAtk, enum BattlerId battlerDef, enu
 static u32 ChooseMoveOrAction(enum BattlerId battler)
 {
     if (IsDoubleBattle())
-        return ChooseMoveOrAction_Doubles(battler);
-    return ChooseMoveOrAction_Singles(battler);
+        //old function
+        //return ChooseMoveOrAction_Doubles(battler);
+        return ChooseMoveOrAction_Doubles_Sandbox(battler);
+    //old function
+    //return ChooseMoveOrAction_Singles(battler);
+    return ChooseMoveOrAction_Singles_Sandbox(battler);
 }
 
 static void SetupRandomRollsForAIMoveSelection(enum BattlerId battler)
@@ -7139,4 +7145,192 @@ void ResetDynamicAiFunctions(void)
 {
     sDynamicAiFunc = NULL;
     gDynamicAiSwitchFunc = NULL;
+}
+
+//New AI functions for Sandbox
+
+//yet unchanged. crossing this bridge when we get there
+static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
+{
+    u8 currentMoveArray[MAX_MON_MOVES];
+    u8 consideredMoveArray[MAX_MON_MOVES];
+    u32 numOfBestMoves;
+    u64 flags = gAiThinkingStruct->aiFlags[battler];
+    enum BattlerId opposingBattler = GetOppositeBattler(battler);
+
+    gAiThinkingStruct->aiLogicId = 0;
+    gAiThinkingStruct->movesetIndex = 0;
+    gAiLogicData->partnerMove = 0;   // no ally
+
+    while (flags != 0)
+    {
+        if (flags & 1)
+        {
+            if (IsBattlerPredictedToSwitch(opposingBattler) && (gAiThinkingStruct->aiFlags[battler] & AI_FLAG_PREDICT_INCOMING_MON))
+                BattleAI_DoAIProcessing_PredictedSwitchin(gAiThinkingStruct, gAiLogicData, battler, opposingBattler);
+            else
+                BattleAI_DoAIProcessing(gAiThinkingStruct, battler, opposingBattler);
+        }
+        flags >>= (u64)1;
+        gAiThinkingStruct->aiLogicId++;
+    }
+    if (gAiThinkingStruct->aiFlags[battler] & AI_FLAG_CHECK_VIABILITY)
+        AI_CompareDamagingMoves(battler, opposingBattler);
+
+    for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
+    {
+        gAiBattleData->finalScore[battler][opposingBattler][moveIndex] = gAiThinkingStruct->score[moveIndex];
+    }
+
+    numOfBestMoves = 1;
+    currentMoveArray[0] = gAiThinkingStruct->score[0];
+    consideredMoveArray[0] = 0;
+
+    for (u32 moveIndex = 1; moveIndex < MAX_MON_MOVES; moveIndex++)
+    {
+        if (gBattleMons[battler].moves[moveIndex] != MOVE_NONE)
+        {
+            // In ruby, the order of these if statements is reversed.
+            if (currentMoveArray[0] == gAiThinkingStruct->score[moveIndex])
+            {
+                currentMoveArray[numOfBestMoves] = gAiThinkingStruct->score[moveIndex];
+                consideredMoveArray[numOfBestMoves++] = moveIndex;
+            }
+            if (currentMoveArray[0] < gAiThinkingStruct->score[moveIndex])
+            {
+                numOfBestMoves = 1;
+                currentMoveArray[0] = gAiThinkingStruct->score[moveIndex];
+                consideredMoveArray[0] = moveIndex;
+            }
+        }
+    }
+
+#if TESTING
+    gBattleTestRunnerState->data.trial.scoreTieCount = numOfBestMoves;
+#endif
+
+    return consideredMoveArray[RandomUniform(RNG_AI_SCORE_TIE_SINGLES, 0, numOfBestMoves - 1)];
+}
+
+//yet unchanged. crossing this bridge when we get there
+static u32 ChooseMoveOrAction_Doubles_Sandbox(enum BattlerId battler)
+{
+    u64 flags;
+    s32 bestMovePointsForTarget[MAX_BATTLERS_COUNT];
+    u8 mostViableTargetsArray[MAX_BATTLERS_COUNT];
+    u8 actionOrMoveIndex[MAX_BATTLERS_COUNT];
+    s32 mostViableMovesScores[MAX_MON_MOVES];
+    u8 mostViableMovesIndices[MAX_MON_MOVES];
+    u32 mostViableTargetsNo;
+    u32 mostViableMovesNo;
+    s32 mostMovePoints;
+
+    for (enum BattlerId battlerIndex = 0; battlerIndex < MAX_BATTLERS_COUNT; battlerIndex++)
+    {
+        if (gBattleMons[battlerIndex].hp == 0)
+        {
+            actionOrMoveIndex[battlerIndex] = 0xFF;
+            bestMovePointsForTarget[battlerIndex] = -1;
+        }
+        else
+        {
+            if (gBattleTypeFlags & BATTLE_TYPE_PALACE)
+                BattleAI_SetupAIData(gBattleStruct->palaceFlags >> 4, battler);
+            else
+                BattleAI_SetupAIData(0xF, battler);
+
+            gBattlerTarget = battlerIndex;
+
+            gAiLogicData->partnerMove = GetAllyChosenMove(battler);
+            gAiThinkingStruct->aiLogicId = 0;
+            gAiThinkingStruct->movesetIndex = 0;
+            flags = gAiThinkingStruct->aiFlags[battler];
+
+            while (flags != 0)
+            {
+                if (flags & 1)
+                {
+                    if (IsBattlerPredictedToSwitch(gBattlerTarget) && (gAiThinkingStruct->aiFlags[battler] & AI_FLAG_PREDICT_INCOMING_MON))
+                        BattleAI_DoAIProcessing_PredictedSwitchin(gAiThinkingStruct, gAiLogicData, battler, gBattlerTarget);
+                    else
+                        BattleAI_DoAIProcessing(gAiThinkingStruct, battler, gBattlerTarget);
+                }
+                flags >>= (u64)1;
+                gAiThinkingStruct->aiLogicId++;
+            }
+            if (gAiThinkingStruct->aiFlags[battler] & AI_FLAG_CHECK_VIABILITY)
+                AI_CompareDamagingMoves(battler, gBattlerTarget);
+
+            mostViableMovesScores[0] = gAiThinkingStruct->score[0];
+            mostViableMovesIndices[0] = 0;
+            mostViableMovesNo = 1;
+            for (u32 moveIndex = 1; moveIndex < MAX_MON_MOVES; moveIndex++)
+            {
+                if (gBattleMons[battler].moves[moveIndex] != 0)
+                {
+                    if (!CanTargetBattler(battler, battlerIndex, gBattleMons[battler].moves[moveIndex]))
+                        continue;
+
+                    if (mostViableMovesScores[0] == gAiThinkingStruct->score[moveIndex])
+                    {
+                        mostViableMovesScores[mostViableMovesNo] = gAiThinkingStruct->score[moveIndex];
+                        mostViableMovesIndices[mostViableMovesNo] = moveIndex;
+                        mostViableMovesNo++;
+                    }
+                    if (mostViableMovesScores[0] < gAiThinkingStruct->score[moveIndex])
+                    {
+                        mostViableMovesScores[0] = gAiThinkingStruct->score[moveIndex];
+                        mostViableMovesIndices[0] = moveIndex;
+                        mostViableMovesNo = 1;
+                    }
+                }
+            }
+
+#if TESTING
+            gBattleTestRunnerState->data.trial.scoreTieCount = mostViableMovesNo;
+#endif
+
+            actionOrMoveIndex[battlerIndex] = mostViableMovesIndices[RandomUniform(RNG_AI_SCORE_TIE_DOUBLES_MOVE, 0, mostViableMovesNo - 1)];
+            bestMovePointsForTarget[battlerIndex] = mostViableMovesScores[0];
+
+            // Don't use a move against ally if it has less than 100 points.
+            if (battlerIndex == BATTLE_PARTNER(battler) && bestMovePointsForTarget[battlerIndex] < AI_SCORE_DEFAULT)
+            {
+                bestMovePointsForTarget[battlerIndex] = -1;
+            }
+
+            for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
+            {
+                gAiBattleData->finalScore[battler][gBattlerTarget][moveIndex] = gAiThinkingStruct->score[moveIndex];
+            }
+        }
+    }
+
+    mostMovePoints = bestMovePointsForTarget[0];
+    mostViableTargetsArray[0] = 0;
+    mostViableTargetsNo = 1;
+
+    for (enum BattlerId battlerIndex = 1; battlerIndex < MAX_BATTLERS_COUNT; battlerIndex++)
+    {
+        if (mostMovePoints == bestMovePointsForTarget[battlerIndex])
+        {
+            mostViableTargetsArray[mostViableTargetsNo] = battlerIndex;
+            mostViableTargetsNo++;
+        }
+        if (mostMovePoints < bestMovePointsForTarget[battlerIndex])
+        {
+            mostMovePoints = bestMovePointsForTarget[battlerIndex];
+            mostViableTargetsArray[0] = battlerIndex;
+            mostViableTargetsNo = 1;
+        }
+    }
+
+#if TESTING
+    gBattleTestRunnerState->data.trial.targetTieCount = mostViableTargetsNo;
+#endif
+
+    gBattlerTarget = mostViableTargetsArray[RandomUniform(RNG_AI_SCORE_TIE_DOUBLES_TARGET, 0, mostViableTargetsNo - 1)];
+    gAiBattleData->chosenTarget[battler] = gBattlerTarget;
+
+    return actionOrMoveIndex[gBattlerTarget];
 }
