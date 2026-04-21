@@ -7178,8 +7178,9 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
         gAiThinkingStruct->aiLogicId++;
     }
     if (gAiThinkingStruct->aiFlags[battler] & AI_FLAG_CHECK_VIABILITY)
+    {
         AI_CompareDamagingMoves(battler, opposingBattler);
-
+    }
     for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
     {
         gAiBattleData->finalScore[battler][opposingBattler][moveIndex] = gAiThinkingStruct->score[moveIndex];

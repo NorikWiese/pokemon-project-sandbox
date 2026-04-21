@@ -58,7 +58,16 @@
 #define AI_FLAG_FIRST_BATTLE          AI_FLAG(63)
 
 // AI 
-#define AI_SCORE_DEFAULT            100     // Default score for all AI moves.
-#define AI_SCORE_LIKES_CLICKING_STUFF     5       //Test to see if Norik gets it
+#define AI_SCORE_DEFAULT                    100                                         // Default score for all AI moves.
+#define AI_SCORE_GOOD_MOVE                  6
+#define AI_SCORE_SLOW_KILL                  3
+#define AI_SCORE_FAST_KILL                  6
+#define AI_SCORE_COMPETES_WITH_SLOW_KILL    AI_SCORE_GOOD_MOVE + AI_SCORE_SLOW_KILL
+#define AI_SCORE_COMPETES_WITH_FAST_KILL    AI_SCORE_GOOD_MOVE + AI_SCORE_SLOW_KILL
+
+
+#define AI_SCORE_DONT               -20
+
+#define AI_SCORE_LIKES_CLICKING_STUFF     5     //Test to see if Norik gets it
 
 #endif // GUARD_CONSTANTS_BATTLE_AI_H

@@ -1,0 +1,53 @@
+- Baseline:
+	- Kill oder highest Damage -> +6
+	- Prio und slower und player kills -> +9                     (review in future pls)
+	- DONT -> -20
+- AI Flags
+	- Default Flag
+		- Fast Kill (includes prio) -> +6
+		- Slow Kill -> +3
+		- Moves specific stuff
+			- Alle Protect Moves
+				- Base +6
+				- Kingsshield:
+					- smth
+			- Trapping Moves
+				- Base +6
+			- Damaging Speed Reduction Moves
+				- AI slower und enemy nicht contrary etc. -> +6
+			- Damaging (Sp)Atk Moves
+				- Enemy nicht contrary etc. -> +6
+			- Explosion
+				- TODO. weniger health -> higher score
+			- Hazards (non sticky web)
+				- firts turn -> +9
+					- else -> +6
+			- Sticky Web
+				- first turn -> +12
+					- else -> +9
+			- Terrain Moves
+				- Base +9
+			- Light Screen/Reflect
+				- Base +6
+				- 50/50 für additional +1
+				- If player has damaging breaking move -> additional -1
+			- Status Moves
+				- Base +6
+				- 50/50 für additional +1 if
+					- burn against phys attacker
+					- frostbite againts spec attacker
+					- para against faster attacker
+			- Tailwind/Trick Room
+				- either AI mon than any Player Mon -> +9
+			- Fake Out
+				- first turn und player flinchable -> +9                     (review in future pls)
+			- Fell Stinger
+				- Kill -> +10
+	- Dont do stupid shit flag
+		- Move specific
+			- Explosion
+				- Last Mon -> -30
+			- [insert setup]
+				- schon up -> -30
+			- Fake out
+				- not first turn -> -30
