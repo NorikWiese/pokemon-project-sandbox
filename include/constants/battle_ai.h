@@ -43,7 +43,10 @@
 #define AI_FLAG_RANDOMIZE_PARTY_INDICES     AI_FLAG(33)  // AI will randomize the order of the mons in its party, including the lead. Not an AI flag really, just a way to trigger TPP functionality
 
 //Sandbox AI flags
-#define AI_CLICK_ALL                        AI_FLAG(34) //Test to see if Norik gets it
+#define AI_FLAG_CLICK_GOOD_MOVES            AI_FLAG(34)
+#define AI_FLAG_DONT_CLICK_STUPID_SHIT      AI_FLAG(35)
+
+#define AI_FLAG_STANDARD_TRAINER            (AI_FLAG_CLICK_GOOD_MOVES | AI_FLAG_DONT_CLICK_STUPID_SHIT)
 
 // The following options are enough to have a basic/smart trainer. Any other addtion could make the trainer worse/better depending on the flag
 #define AI_FLAG_BASIC_TRAINER         (AI_FLAG_CHECK_BAD_MOVE | AI_FLAG_TRY_TO_FAINT | AI_FLAG_CHECK_VIABILITY)
@@ -57,17 +60,15 @@
 #define AI_FLAG_SAFARI                AI_FLAG(62)
 #define AI_FLAG_FIRST_BATTLE          AI_FLAG(63)
 
-// AI 
+// Sandbox AI Scores
 #define AI_SCORE_DEFAULT                    100                                         // Default score for all AI moves.
 #define AI_SCORE_GOOD_MOVE                  6
 #define AI_SCORE_SLOW_KILL                  3
 #define AI_SCORE_FAST_KILL                  6
 #define AI_SCORE_COMPETES_WITH_SLOW_KILL    AI_SCORE_GOOD_MOVE + AI_SCORE_SLOW_KILL
 #define AI_SCORE_COMPETES_WITH_FAST_KILL    AI_SCORE_GOOD_MOVE + AI_SCORE_SLOW_KILL
+#define AI_SCORE_BEATS_COMPETITORS          1
 
-
-#define AI_SCORE_DONT               -20
-
-#define AI_SCORE_LIKES_CLICKING_STUFF     5     //Test to see if Norik gets it
+#define AI_SCORE_DONT                       -30
 
 #endif // GUARD_CONSTANTS_BATTLE_AI_H

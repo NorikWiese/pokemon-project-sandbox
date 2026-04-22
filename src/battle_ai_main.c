@@ -75,7 +75,8 @@ static s32 AI_PredictSwitch(enum BattlerId battlerAtk, enum BattlerId battlerDef
 static s32 AI_CheckPpStall(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move, s32 score);
 
 //Sandbox AI functions
-static s32 AI_Click_All(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move, s32 score);
+static s32 AI_ClickGoodMoves(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move, s32 score);
+static s32 AI_DontClickStupidShit(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move, s32 score);
 
 static s32 (*const sBattleAiFuncTable[])(enum BattlerId, enum BattlerId, enum Move, s32) =
 {
@@ -113,8 +114,8 @@ static s32 (*const sBattleAiFuncTable[])(enum BattlerId, enum BattlerId, enum Mo
     [31] = NULL,                     // Unused
     [32] = NULL,                     // Unused
     [33] = NULL,                     // Unused
-    [34] = AI_Click_All,             // Does Norik get it?
-    [35] = NULL,                     // Unused
+    [34] = AI_ClickGoodMoves,        // Function for standard trainers in project sandbox
+    [35] = AI_DontClickStupidShit,   // Function for standard trainers in project sandbox
     [36] = NULL,                     // Unused
     [37] = NULL,                     // Unused
     [38] = NULL,                     // Unused
@@ -7151,8 +7152,6 @@ void ResetDynamicAiFunctions(void)
 }
 
 //New AI functions for Sandbox
-
-//yet unchanged. crossing this bridge when we get there
 static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
 {
     u8 currentMoveArray[MAX_MON_MOVES];
@@ -7165,6 +7164,12 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
     gAiThinkingStruct->movesetIndex = 0;
     gAiLogicData->partnerMove = 0;   // no ally
 
+    //Basic damage comparisson
+    if (gAiThinkingStruct->aiFlags[battler] & AI_FLAG_CLICK_GOOD_MOVES)
+    {
+        //TODO: AI for damage comparisson, fast and slow kill
+    }
+    //AI flag application
     while (flags != 0)
     {
         if (flags & 1)
@@ -7177,15 +7182,13 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
         flags >>= (u64)1;
         gAiThinkingStruct->aiLogicId++;
     }
-    if (gAiThinkingStruct->aiFlags[battler] & AI_FLAG_CHECK_VIABILITY)
-    {
-        AI_CompareDamagingMoves(battler, opposingBattler);
-    }
+    //final scores (dont ask *me* why)
     for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
     {
         gAiBattleData->finalScore[battler][opposingBattler][moveIndex] = gAiThinkingStruct->score[moveIndex];
     }
 
+    //find best moves
     numOfBestMoves = 1;
     currentMoveArray[0] = gAiThinkingStruct->score[0];
     consideredMoveArray[0] = 0;
@@ -7213,6 +7216,7 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
     gBattleTestRunnerState->data.trial.scoreTieCount = numOfBestMoves;
 #endif
 
+    //return  best move
     return consideredMoveArray[RandomUniform(RNG_AI_SCORE_TIE_SINGLES, 0, numOfBestMoves - 1)];
 }
 
@@ -7339,8 +7343,59 @@ static u32 ChooseMoveOrAction_Doubles_Sandbox(enum BattlerId battler)
     return actionOrMoveIndex[gBattlerTarget];
 }
 
-static s32 AI_Click_All(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move, s32 score)
+static s32 AI_ClickGoodMoves(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move, s32 score)
 {
-    score += AI_SCORE_LIKES_CLICKING_STUFF;
+    // Protecting Moves
+    if (move == MOVE_PROTECT ||
+        move == MOVE_DETECT ||
+        move == MOVE_KINGS_SHIELD ||
+        move == MOVE_SPIKY_SHIELD ||
+        move == MOVE_BANEFUL_BUNKER ||
+        move == MOVE_OBSTRUCT ||
+        move == MOVE_SILK_TRAP ||
+        move == MOVE_BURNING_BULWARK)
+    {
+        score += AI_SCORE_GOOD_MOVE;
+    }
+    // Trapping Moves
+    if (MoveHasAdditionalEffect(move, MOVE_EFFECT_WRAP))
+    {
+        score += AI_SCORE_GOOD_MOVE;
+    }
+    // Non damaging Status Moves
+    if (GetMoveEffect(move) == EFFECT_NON_VOLATILE_STATUS && GetMovePower(move) == 0)
+    {
+        score += AI_SCORE_GOOD_MOVE;
+        switch (GetMoveNonVolatileStatus(move))
+        {
+            case MOVE_EFFECT_BURN:
+                if (TRUE)   //TODO: Gegner Atk checken
+                {
+                    score += AI_SCORE_BEATS_COMPETITORS;    //TODO: chance einfügen
+                }
+                break;
+            case MOVE_EFFECT_FROSTBITE:
+                if (TRUE)   //TODO: Gegner SpAtk checken
+                {
+                    score += AI_SCORE_BEATS_COMPETITORS;    //TODO: chance einfügen
+                }
+                break;
+            case MOVE_EFFECT_PARALYSIS:
+                if (TRUE)   //TODO: Gegner Spd checken
+                {
+                    score += AI_SCORE_BEATS_COMPETITORS;    //TODO: chance einfügen
+                }
+                break;
+            default:
+                score += 0;
+                break;
+        }
+    }
+
+    return score;
+}
+
+static s32 AI_DontClickStupidShit(enum BattlerId battlerAtk, enum BattlerId battlerDef, enum Move move, s32 score)
+{
     return score;
 }
