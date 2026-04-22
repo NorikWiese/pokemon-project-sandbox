@@ -5,8 +5,8 @@
 AI_SINGLE_BATTLE_TEST("No Ai -> all default")
 {
     GIVEN {
-        PLAYER(SPECIES_WOBBUFFET) { Level(50); HP(100); Nature(NATURE_QUIRKY); Ability(ABILITY_TELEPATHY); Speed(58); Moves(MOVE_TACKLE); }
-        OPPONENT(SPECIES_KANGASKHAN) { Level(50); Nature(NATURE_QUIRKY); Ability(ABILITY_INNER_FOCUS); Speed(251); Moves(MOVE_RETALIATE, MOVE_SLASH); }
+        PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_RETALIATE, MOVE_SLASH); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
@@ -19,8 +19,8 @@ AI_SINGLE_BATTLE_TEST("No Ai -> all default")
 AI_SINGLE_BATTLE_TEST("basic AI would explode")
 {
     GIVEN {
-        PLAYER(SPECIES_WOBBUFFET) { Level(50); HP(100); Nature(NATURE_QUIRKY); Ability(ABILITY_TELEPATHY); Speed(58); Moves(MOVE_TACKLE); }
-        OPPONENT(SPECIES_KANGASKHAN) { Level(50); Nature(NATURE_QUIRKY); Ability(ABILITY_INNER_FOCUS); Speed(251); Moves(MOVE_RETALIATE, MOVE_SLASH, MOVE_EXPLOSION); }
+        PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_RETALIATE, MOVE_SLASH, MOVE_EXPLOSION); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
@@ -48,8 +48,8 @@ AI_SINGLE_BATTLE_TEST("AI likes trapping moves")
 
     GIVEN {
         AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
-        PLAYER(SPECIES_WOBBUFFET) { Level(50); HP(100); Nature(NATURE_QUIRKY); Ability(ABILITY_TELEPATHY); Speed(58); Moves(MOVE_TACKLE); }
-        OPPONENT(SPECIES_KANGASKHAN) { Level(50); Nature(NATURE_QUIRKY); Ability(ABILITY_INNER_FOCUS); Speed(251); Moves(MOVE_HYPER_BEAM, move); }
+        PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_HYPER_BEAM, move); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
@@ -62,8 +62,8 @@ AI_SINGLE_BATTLE_TEST("AI likes status moves")
 {
     GIVEN {
         AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
-        PLAYER(SPECIES_WOBBUFFET) { Level(50); HP(100); Nature(NATURE_QUIRKY); Ability(ABILITY_TELEPATHY); Speed(58); Moves(MOVE_TACKLE); }
-        OPPONENT(SPECIES_KANGASKHAN) { Level(50); Nature(NATURE_QUIRKY); Ability(ABILITY_INNER_FOCUS); Speed(251); Moves(MOVE_WILL_O_WISP, MOVE_THUNDER_WAVE, MOVE_FLAMETHROWER); }
+        PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_WILL_O_WISP, MOVE_THUNDER_WAVE, MOVE_FLAMETHROWER); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
@@ -89,12 +89,54 @@ AI_SINGLE_BATTLE_TEST("AI likes protecting")
 
     GIVEN {
         AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
-        PLAYER(SPECIES_WOBBUFFET) { Level(50); HP(100); Nature(NATURE_QUIRKY); Ability(ABILITY_TELEPATHY); Speed(58); Moves(MOVE_TACKLE); }
-        OPPONENT(SPECIES_KANGASKHAN) { Level(50); Nature(NATURE_QUIRKY); Ability(ABILITY_INNER_FOCUS); Speed(251); Moves(MOVE_HYPER_BEAM, move); }
+        PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_HYPER_BEAM, move); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
             SCORE_EQ_VAL(opponent, move,  (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE));
+        }
+    }
+}
+
+AI_SINGLE_BATTLE_TEST("AI likes screens but not when brick break or defog")
+{
+    enum Move move;
+    
+    PARAMETRIZE { move = MOVE_PROTECT; }
+    PARAMETRIZE { move = MOVE_BRICK_BREAK; }
+    PARAMETRIZE { move = MOVE_DEFOG; }
+
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE, move); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_REFLECT, MOVE_LIGHT_SCREEN); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+            SCORE_EQ_VAL(opponent, MOVE_REFLECT,        (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + ((move != MOVE_PROTECT) ? AI_SCORE_LOSES_TO_COMPETITORS : 0)));
+            SCORE_EQ_VAL(opponent, MOVE_LIGHT_SCREEN,   (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + ((move != MOVE_PROTECT) ? AI_SCORE_LOSES_TO_COMPETITORS : 0)));
+        }
+    }
+}
+
+AI_SINGLE_BATTLE_TEST("AI likes terrains")
+{
+    enum Move move;
+
+    PARAMETRIZE { move = MOVE_MISTY_TERRAIN; }
+    PARAMETRIZE { move = MOVE_GRASSY_TERRAIN; }
+    PARAMETRIZE { move = MOVE_ELECTRIC_TERRAIN; }
+    PARAMETRIZE { move = MOVE_PSYCHIC_TERRAIN; }
+
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_HYPER_BEAM, move); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+            SCORE_EQ_VAL(opponent, move,  (AI_SCORE_DEFAULT + AI_SCORE_COMPETES_WITH_SLOW_KILL));
         }
     }
 }

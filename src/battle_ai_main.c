@@ -7391,7 +7391,27 @@ static s32 AI_ClickGoodMoves(enum BattlerId battlerAtk, enum BattlerId battlerDe
                 break;
         }
     }
-
+    // Screens
+    if (move == MOVE_LIGHT_SCREEN ||
+        move == MOVE_REFLECT)
+    {
+        score += AI_SCORE_GOOD_MOVE;
+        //TODO: chance für +1
+        if (HasMove(battlerDef, MOVE_BRICK_BREAK) ||
+            HasMove(battlerDef, MOVE_DEFOG))
+        {
+            score += AI_SCORE_LOSES_TO_COMPETITORS;
+        }
+    }
+    // Terrains
+    if (move == MOVE_ELECTRIC_TERRAIN ||
+        move == MOVE_PSYCHIC_TERRAIN ||
+        move == MOVE_GRASSY_TERRAIN ||
+        move == MOVE_MISTY_TERRAIN)
+    {
+        score += AI_SCORE_COMPETES_WITH_SLOW_KILL;
+    }
+    //return adjusted score
     return score;
 }
 
