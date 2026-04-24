@@ -7177,9 +7177,9 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
         {
             if (moves[moveIndex] != MOVE_NONE && GetMovePower(moves[moveIndex]) != 0)
             {
-                u32 maximum = gAiLogicData->simulatedDmg[battler][opposingBattler][moveIndex].maximum;         //this is broken probably
-                u32 minimum = gAiLogicData->simulatedDmg[battler][opposingBattler][moveIndex].minimum;         //this is broken probably
-                rolledDamage[moveIndex] = minimum + (maximum - minimum) * ((Random() % 100) / 100);
+                u32 maximum = gAiLogicData->simulatedDmg[battler][opposingBattler][moveIndex].maximum;
+                u32 minimum = gAiLogicData->simulatedDmg[battler][opposingBattler][moveIndex].minimum;
+                rolledDamage[moveIndex] = minimum + (maximum - minimum) * (Random() % 100) / 100;           // TODO: double check: Might be somewhat broken since "AI rolls damage and thus only sees kill sometimes" Test is only at 30% rather than 50
             } else
             {
                 rolledDamage[moveIndex] = 0;

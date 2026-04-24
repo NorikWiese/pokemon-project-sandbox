@@ -224,3 +224,18 @@ AI_SINGLE_BATTLE_TEST("AI understands nothing kills and picks highest damage mov
         }
     }
 }
+
+AI_SINGLE_BATTLE_TEST("AI rolls damage and thus only sees kill sometimes")
+{
+    PASSES_RANDOMLY(3, 10);
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(1); HP(124); Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Level(100); Speed(2); Moves(MOVE_HYPER_BEAM); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+            SCORE_EQ_VAL(opponent, MOVE_HYPER_BEAM, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_FAST_KILL));
+        }
+    }
+}
