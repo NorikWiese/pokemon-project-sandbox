@@ -213,8 +213,8 @@ AI_SINGLE_BATTLE_TEST("AI understands nothing kills and picks highest damage mov
 {
     GIVEN {
         AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
-        PLAYER(SPECIES_WOBBUFFET) { Level(100); Moves(MOVE_TACKLE); }
-        OPPONENT(SPECIES_KANGASKHAN) { Level(1); Moves(MOVE_PROTECT, MOVE_TACKLE, MOVE_HYPER_BEAM); }
+        PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_PROTECT, MOVE_TACKLE, MOVE_HYPER_BEAM); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
