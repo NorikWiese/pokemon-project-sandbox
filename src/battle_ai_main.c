@@ -7159,6 +7159,7 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
     u32 numOfBestMoves;
     u64 flags = gAiThinkingStruct->aiFlags[battler];
     enum BattlerId opposingBattler = GetOppositeBattler(battler);
+    enum Move *moves = GetMovesArray(battler);
 
     gAiThinkingStruct->aiLogicId = 0;
     gAiThinkingStruct->movesetIndex = 0;
@@ -7167,16 +7168,68 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
     //Basic damage comparisson
     if (gAiThinkingStruct->aiFlags[battler] & AI_FLAG_CLICK_GOOD_MOVES)
     {
-        //TODO: AI for damage comparisson, fast and slow kill
+        u32 rolledDamage[MAX_MON_MOVES];
+        bool8 atLeastOneKills = FALSE;
+        u32 bestMoveIndex = MAX_MON_MOVES;
+
+        // roll damage
+        for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
+        {
+            if (moves[moveIndex] != MOVE_NONE && GetMovePower(moves[moveIndex]) != 0)
+            {
+                u32 maximum = gAiLogicData->simulatedDmg[battler][opposingBattler][moveIndex].maximum;         //this is broken probably
+                u32 minimum = gAiLogicData->simulatedDmg[battler][opposingBattler][moveIndex].minimum;         //this is broken probably
+                rolledDamage[moveIndex] = minimum + (maximum - minimum) * ((Random() % 100) / 100);
+            } else
+            {
+                rolledDamage[moveIndex] = 0;
+            }
+        }
+
+        for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
+        {
+            if (rolledDamage[moveIndex] > gBattleMons[opposingBattler].hp) // TODO: Sturdy etc.
+            {
+                atLeastOneKills = TRUE;
+                bestMoveIndex = MAX_MON_MOVES;
+                gAiThinkingStruct->score[moveIndex] += AI_SCORE_GOOD_MOVE;
+                if (AI_IsFaster(battler, opposingBattler, moves[moveIndex], MOVE_NONE, DONT_CONSIDER_PRIORITY))
+                {
+                    gAiThinkingStruct->score[moveIndex] += AI_SCORE_FAST_KILL;
+                } else
+                {
+                    gAiThinkingStruct->score[moveIndex] += AI_SCORE_SLOW_KILL;
+                }
+            } else
+            {
+                if (GetMovePower(moves[moveIndex]) != 0 && !atLeastOneKills)
+                {
+                    if (bestMoveIndex == MAX_MON_MOVES)
+                    {
+                        bestMoveIndex = moveIndex;
+                    } else
+                    {
+                        if (rolledDamage[moveIndex] > rolledDamage[bestMoveIndex])
+                        {
+                            bestMoveIndex = moveIndex;
+                        }
+                    }
+                }
+            }
+        }
+        if (!atLeastOneKills && bestMoveIndex != MAX_MON_MOVES)
+        {
+            gAiThinkingStruct->score[bestMoveIndex] += AI_SCORE_GOOD_MOVE;
+        }
     }
     //AI flag application
     while (flags != 0)
     {
         if (flags & 1)
         {
-            if (IsBattlerPredictedToSwitch(opposingBattler) && (gAiThinkingStruct->aiFlags[battler] & AI_FLAG_PREDICT_INCOMING_MON))
-                BattleAI_DoAIProcessing_PredictedSwitchin(gAiThinkingStruct, gAiLogicData, battler, opposingBattler);
-            else
+            //if (IsBattlerPredictedToSwitch(opposingBattler) && (gAiThinkingStruct->aiFlags[battler] & AI_FLAG_PREDICT_INCOMING_MON))
+            //    BattleAI_DoAIProcessing_PredictedSwitchin(gAiThinkingStruct, gAiLogicData, battler, opposingBattler);
+            //else
                 BattleAI_DoAIProcessing(gAiThinkingStruct, battler, opposingBattler);
         }
         flags >>= (u64)1;
@@ -7356,12 +7409,22 @@ static s32 AI_ClickGoodMoves(enum BattlerId battlerAtk, enum BattlerId battlerDe
         move == MOVE_BURNING_BULWARK)
     {
         score += AI_SCORE_GOOD_MOVE;
+        // TODO: fancy logic for fancy moves
     }
     // Trapping Moves
     if (MoveHasAdditionalEffect(move, MOVE_EFFECT_WRAP))
     {
         score += AI_SCORE_GOOD_MOVE;
     }
+    // Explosion
+    if (IsExplosionMove(move))
+    {
+        //TODO: Explosion Logic
+    }
+    // Hazards
+    
+    // Sticky Web
+
     // Non damaging Status Moves
     if (GetMoveEffect(move) == EFFECT_NON_VOLATILE_STATUS && GetMovePower(move) == 0)
     {
@@ -7397,8 +7460,7 @@ static s32 AI_ClickGoodMoves(enum BattlerId battlerAtk, enum BattlerId battlerDe
     {
         score += AI_SCORE_GOOD_MOVE;
         //TODO: chance für +1
-        if (HasMove(battlerDef, MOVE_BRICK_BREAK) ||
-            HasMove(battlerDef, MOVE_DEFOG))
+        if (HasMoveWithAdditionalEffect(battlerDef, MOVE_EFFECT_BREAK_SCREEN))
         {
             score += AI_SCORE_LOSES_TO_COMPETITORS;
         }
@@ -7410,6 +7472,17 @@ static s32 AI_ClickGoodMoves(enum BattlerId battlerAtk, enum BattlerId battlerDe
         move == MOVE_MISTY_TERRAIN)
     {
         score += AI_SCORE_COMPETES_WITH_SLOW_KILL;
+    }
+    // Tailwind/Trickroom
+
+    // Fake Out
+    if (move == MOVE_FAKE_OUT)
+    {
+        if (gBattleStruct->battlerState[battlerAtk].isFirstTurn &&
+            IsFlinchGuaranteed(battlerAtk, battlerDef, move))
+        {
+            score += AI_SCORE_COMPETES_WITH_SLOW_KILL;
+        }
     }
     //return adjusted score
     return score;
