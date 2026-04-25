@@ -6,7 +6,7 @@ AI_SINGLE_BATTLE_TEST("No Ai -> all default")
 {
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE); }
-        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_RETALIATE, MOVE_SLASH); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_RETALIATE, MOVE_SLASH, MOVE_PROTECT, MOVE_SWORDS_DANCE); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
@@ -20,7 +20,7 @@ AI_SINGLE_BATTLE_TEST("basic AI would explode")
 {
     GIVEN {
         PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE); }
-        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_RETALIATE, MOVE_SLASH, MOVE_EXPLOSION); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_RETALIATE, MOVE_SLASH, MOVE_EXPLOSION, MOVE_PROTECT); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
@@ -49,7 +49,7 @@ AI_SINGLE_BATTLE_TEST("AI likes trapping moves")
     GIVEN {
         AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
         PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE); }
-        OPPONENT(SPECIES_KANGASKHAN) { Moves(move, MOVE_HYPER_BEAM); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(move, MOVE_HYPER_BEAM, MOVE_PROTECT, MOVE_ELECTRIC_TERRAIN); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
@@ -63,13 +63,14 @@ AI_SINGLE_BATTLE_TEST("AI likes status moves")
     GIVEN {
         AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
         PLAYER(SPECIES_WOBBUFFET) { Moves(MOVE_TACKLE); }
-        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_WILL_O_WISP, MOVE_THUNDER_WAVE, MOVE_FLAMETHROWER); }
+        OPPONENT(SPECIES_KANGASKHAN) { Moves(MOVE_WILL_O_WISP, MOVE_THUNDER_WAVE, MOVE_FLAMETHROWER, MOVE_HYPER_BEAM); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
             SCORE_EQ_VAL(opponent, MOVE_WILL_O_WISP,    (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS));
             SCORE_EQ_VAL(opponent, MOVE_THUNDER_WAVE,   (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS));
-            SCORE_EQ_VAL(opponent, MOVE_FLAMETHROWER,   (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE));
+            SCORE_EQ_VAL(opponent, MOVE_FLAMETHROWER,   (AI_SCORE_DEFAULT));
+            SCORE_EQ_VAL(opponent, MOVE_HYPER_BEAM,     (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE));
         }
     }
 }
@@ -155,7 +156,7 @@ AI_SINGLE_BATTLE_TEST("AI likes fake out but only turn 1")
         }
         TURN {
             MOVE(player, MOVE_TACKLE);
-            SCORE_EQ_VAL(opponent, MOVE_FAKE_OUT,  (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE));
+            SCORE_EQ_VAL(opponent, MOVE_FAKE_OUT,  AI_SCORE_DEFAULT);
         }
     }
 }
@@ -227,15 +228,16 @@ AI_SINGLE_BATTLE_TEST("AI understands nothing kills and picks highest damage mov
 
 AI_SINGLE_BATTLE_TEST("AI rolls damage and thus only sees kill sometimes")
 {
-    PASSES_RANDOMLY(5, 10);
+    PASSES_RANDOMLY(5, 10, RNG_AI_DAMAGE_ROLL);
     GIVEN {
         AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
-        PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(1); HP(125); Moves(MOVE_TACKLE); }
+        PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(1); HP(124); Moves(MOVE_TACKLE); }
         OPPONENT(SPECIES_KANGASKHAN) { Level(100); Speed(2); Moves(MOVE_HYPER_BEAM); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
             SCORE_EQ_VAL(opponent, MOVE_HYPER_BEAM, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_FAST_KILL));
+            //SCORE_EQ_VAL(opponent, MOVE_TACKLE, (AI_SCORE_DEFAULT));
         }
     }
 }
@@ -256,9 +258,8 @@ AI_SINGLE_BATTLE_TEST("AI likes Explosion depending on HP percent (<10 percent)"
         TURN {
             MOVE(player, MOVE_TACKLE);
                                          //default
-                                                             //best damage still sees explosion as good damage (needs to be changed still)
-                                                                                  // Explosion AI
-            SCORE_EQ_VAL(opponent, move, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_COMPETES_WITH_SLOW_KILL + AI_SCORE_BEATS_COMPETITORS));
+                                                             // Explosion AI
+            SCORE_EQ_VAL(opponent, move, (AI_SCORE_DEFAULT + AI_SCORE_COMPETES_WITH_SLOW_KILL + AI_SCORE_BEATS_COMPETITORS));
         }
     }
 }
@@ -271,7 +272,7 @@ AI_SINGLE_BATTLE_TEST("AI likes Explosion depending on HP percent (<33 percent)"
     PARAMETRIZE { move = MOVE_SELF_DESTRUCT; }
     PARAMETRIZE { move = MOVE_MISTY_EXPLOSION; }
 
-    PASSES_RANDOMLY(7, 10);
+    PASSES_RANDOMLY(7, 10, RNG_EXPLOSION_CHANCE);
     GIVEN {
         AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
         PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(2); Moves(MOVE_TACKLE); }
@@ -280,9 +281,8 @@ AI_SINGLE_BATTLE_TEST("AI likes Explosion depending on HP percent (<33 percent)"
         TURN {
             MOVE(player, MOVE_TACKLE);
                                          //default
-                                                             //best damage still sees explosion as good damage (needs to be changed still)
-                                                                                  // Explosion AI
-            SCORE_EQ_VAL(opponent, move, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + 8));
+                                                            // Explosion AI
+            SCORE_EQ_VAL(opponent, move, (AI_SCORE_DEFAULT + 8));
         }
     }
 }
@@ -295,7 +295,7 @@ AI_SINGLE_BATTLE_TEST("AI likes Explosion depending on HP percent (<66 percent)"
     PARAMETRIZE { move = MOVE_SELF_DESTRUCT; }
     PARAMETRIZE { move = MOVE_MISTY_EXPLOSION; }
 
-    PASSES_RANDOMLY(3, 10);
+    PASSES_RANDOMLY(3, 10, RNG_EXPLOSION_CHANCE);
     GIVEN {
         AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
         PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(2); Moves(MOVE_TACKLE); }
@@ -304,9 +304,8 @@ AI_SINGLE_BATTLE_TEST("AI likes Explosion depending on HP percent (<66 percent)"
         TURN {
             MOVE(player, MOVE_TACKLE);
                                          //default
-                                                             //best damage still sees explosion as good damage (needs to be changed still)
-                                                                                  // Explosion AI
-            SCORE_EQ_VAL(opponent, move, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS));
+                                                             // Explosion AI
+            SCORE_EQ_VAL(opponent, move, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS));
         }
     }
 }
@@ -319,18 +318,58 @@ AI_SINGLE_BATTLE_TEST("AI likes Explosion depending on HP percent (Full HP)")
     PARAMETRIZE { move = MOVE_SELF_DESTRUCT; }
     PARAMETRIZE { move = MOVE_MISTY_EXPLOSION; }
 
-    PASSES_RANDOMLY(1, 20);
+    PASSES_RANDOMLY(1, 20, RNG_EXPLOSION_CHANCE);
     GIVEN {
         AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
         PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(2); Moves(MOVE_TACKLE); }
-        OPPONENT(SPECIES_KANGASKHAN) { Level(100); Speed(1); MaxHP(100); HP(100); Moves(move); }
+        OPPONENT(SPECIES_KANGASKHAN) { Level(100); Speed(1); MaxHP(100); HP(100); Moves(MOVE_TACKLE, move, MOVE_PROTECT, MOVE_ACROBATICS); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
+            //SCORE_EQ_VAL(opponent, MOVE_TACKLE, AI_SCORE_DEFAULT);
                                          //default
-                                                             //best damage still sees explosion as good damage (needs to be changed still)
-                                                                                  // Explosion AI
-            SCORE_EQ_VAL(opponent, move, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS));
+                                                            // Explosion AI
+            SCORE_EQ_VAL(opponent, move, AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS);
+            EXPECT_MOVE(opponent, move);
+        }
+    }
+}
+
+AI_SINGLE_BATTLE_TEST("AI likes Tailwind/Trick Room when slower")
+{
+    enum Move move;
+    
+    PARAMETRIZE { move = MOVE_TAILWIND; }
+    PARAMETRIZE { move = MOVE_TRICK_ROOM; }
+
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { Speed(2); Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Speed(1); MaxHP(100); HP(100); Moves(MOVE_TACKLE, move, MOVE_PROTECT, MOVE_ACROBATICS); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+            SCORE_EQ_VAL(opponent, move, AI_SCORE_DEFAULT + AI_SCORE_COMPETES_WITH_SLOW_KILL);
+            EXPECT_MOVE(opponent, move);
+        }
+    }
+}
+
+AI_SINGLE_BATTLE_TEST("AI doesnt like Tailwind/Trick Room when faster")
+{
+    enum Move move;
+    
+    PARAMETRIZE { move = MOVE_TAILWIND; }
+    PARAMETRIZE { move = MOVE_TRICK_ROOM; }
+
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { Speed(1); Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Speed(2); MaxHP(100); HP(100); Moves(MOVE_TACKLE, move, MOVE_PROTECT, MOVE_ACROBATICS); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+            SCORE_EQ_VAL(opponent, move, AI_SCORE_DEFAULT);
         }
     }
 }

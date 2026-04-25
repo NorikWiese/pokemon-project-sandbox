@@ -7175,12 +7175,15 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
         // roll damage
         for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
         {
-            if (moves[moveIndex] != MOVE_NONE && GetMovePower(moves[moveIndex]) != 0)
+            if (GetMovePower(moves[moveIndex]) != 0 &&
+                moves[moveIndex] != MOVE_NONE &&
+                moves[moveIndex] != MOVE_EXPLOSION &&
+                moves[moveIndex] != MOVE_SELF_DESTRUCT &&
+                moves[moveIndex] != MOVE_MISTY_EXPLOSION)           // TODO: eplizite benennung durch legalMove() (wip name) ersetzen
             {
                 u32 maximum = gAiLogicData->simulatedDmg[battler][opposingBattler][moveIndex].maximum;
                 u32 minimum = gAiLogicData->simulatedDmg[battler][opposingBattler][moveIndex].minimum;
-                //rolledDamage[moveIndex] = minimum + (maximum - minimum) * (Random() % 100) / 100;           // TODO: double check: Might be somewhat broken since "AI rolls damage and thus only sees kill sometimes" Test is only at 30% rather than 50
-                rolledDamage[moveIndex] = RandomUniformDefault(RNG_NONE, minimum, maximum);
+                rolledDamage[moveIndex] = RandomUniform(RNG_AI_DAMAGE_ROLL, minimum, maximum);
             } else
             {
                 rolledDamage[moveIndex] = 0;
@@ -7203,7 +7206,7 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
                 }
             } else
             {
-                if (GetMovePower(moves[moveIndex]) != 0 && !atLeastOneKills)
+                if (rolledDamage[moveIndex] != 0 && !atLeastOneKills)               // TODO: rolledDamage[moveIndex] durch legalMove() (wip name) ersetzen
                 {
                     if (bestMoveIndex == MAX_MON_MOVES)
                     {
@@ -7428,13 +7431,13 @@ static s32 AI_ClickGoodMoves(enum BattlerId battlerAtk, enum BattlerId battlerDe
             score += AI_SCORE_COMPETES_WITH_SLOW_KILL + AI_SCORE_BEATS_COMPETITORS;
         } else if (GetHealthPercentage(battlerAtk) < 33)
         {
-            score += ((Random() % 100) < 70) ? 8 : 0;
+            score += (RandomUniform(RNG_EXPLOSION_CHANCE, 0, 99) < 70) ? 8 : 0;
         } else if (GetHealthPercentage(battlerAtk) < 66)
         {
-            score += ((Random() % 100) < 30) ? AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS : 0;
+            score += (RandomUniform(RNG_EXPLOSION_CHANCE, 0, 99) < 30) ? AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS : 0;
         } else
         {
-            score += ((Random() % 100) < 5) ? AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS : 0;
+            score += (RandomUniform(RNG_EXPLOSION_CHANCE, 0, 99) < 5) ? AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS : 0;
         }
     }
     // Hazards
@@ -7490,7 +7493,14 @@ static s32 AI_ClickGoodMoves(enum BattlerId battlerAtk, enum BattlerId battlerDe
         score += AI_SCORE_COMPETES_WITH_SLOW_KILL;
     }
     // Tailwind/Trickroom
-
+    if (move == MOVE_TAILWIND ||
+        move == MOVE_TRICK_ROOM)
+    {
+        if (AI_IsSlower(battlerAtk, battlerDef, MOVE_TACKLE, MOVE_TACKLE, DONT_CONSIDER_PRIORITY))
+        {
+            score += AI_SCORE_COMPETES_WITH_SLOW_KILL;
+        }
+    }
     // Fake Out
     if (move == MOVE_FAKE_OUT)
     {
