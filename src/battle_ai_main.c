@@ -7441,9 +7441,31 @@ static s32 AI_ClickGoodMoves(enum BattlerId battlerAtk, enum BattlerId battlerDe
         }
     }
     // Hazards
-    
+    if (move == MOVE_STEALTH_ROCK ||
+        move == MOVE_SPIKES ||
+        move == MOVE_TOXIC_SPIKES)
+    {
+        if (gBattleStruct->battlerState[battlerAtk].isFirstTurn)
+        {
+            score += AI_SCORE_COMPETES_WITH_SLOW_KILL;
+        }
+        else
+        {
+            score += AI_SCORE_GOOD_MOVE;
+        }
+    }
     // Sticky Web
-
+    if (move == MOVE_STICKY_WEB)
+    {
+        if (gBattleStruct->battlerState[battlerAtk].isFirstTurn)
+        {
+            score += AI_SCORE_COMPETES_WITH_FAST_KILL;
+        }
+        else
+        {
+            score += AI_SCORE_COMPETES_WITH_SLOW_KILL;
+        }
+    }
     // Non damaging Status Moves
     if (GetMoveEffect(move) == EFFECT_NON_VOLATILE_STATUS && GetMovePower(move) == 0)
     {

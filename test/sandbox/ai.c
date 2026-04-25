@@ -373,3 +373,45 @@ AI_SINGLE_BATTLE_TEST("AI doesnt like Tailwind/Trick Room when faster")
         }
     }
 }
+
+AI_SINGLE_BATTLE_TEST("AI likes hazards a lot on turn 1 and less from then on")
+{
+    enum Move move;
+    
+    PARAMETRIZE { move = MOVE_STEALTH_ROCK; }
+    PARAMETRIZE { move = MOVE_SPIKES; }
+    PARAMETRIZE { move = MOVE_TOXIC_SPIKES; }
+
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { Speed(1); Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Speed(2); MaxHP(100); HP(100); Moves(MOVE_TACKLE, move, MOVE_PROTECT, MOVE_ACROBATICS); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+            SCORE_EQ_VAL(opponent, move, AI_SCORE_DEFAULT + AI_SCORE_COMPETES_WITH_SLOW_KILL);
+        }
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+            SCORE_EQ_VAL(opponent, move, AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE);
+        }
+    }
+}
+
+AI_SINGLE_BATTLE_TEST("AI likes sticky web a lot on turn 1 and less from then on")
+{
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { Speed(1); Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Speed(2); MaxHP(100); HP(100); Moves(MOVE_TACKLE, MOVE_STICKY_WEB, MOVE_PROTECT, MOVE_ACROBATICS); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+            SCORE_EQ_VAL(opponent, MOVE_STICKY_WEB, AI_SCORE_DEFAULT + AI_SCORE_COMPETES_WITH_FAST_KILL);
+        }
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+            SCORE_EQ_VAL(opponent, MOVE_STICKY_WEB, AI_SCORE_DEFAULT + AI_SCORE_COMPETES_WITH_SLOW_KILL);
+        }
+    }
+}
