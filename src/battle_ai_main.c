@@ -7179,7 +7179,8 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
             {
                 u32 maximum = gAiLogicData->simulatedDmg[battler][opposingBattler][moveIndex].maximum;
                 u32 minimum = gAiLogicData->simulatedDmg[battler][opposingBattler][moveIndex].minimum;
-                rolledDamage[moveIndex] = minimum + (maximum - minimum) * (Random() % 100) / 100;           // TODO: double check: Might be somewhat broken since "AI rolls damage and thus only sees kill sometimes" Test is only at 30% rather than 50
+                //rolledDamage[moveIndex] = minimum + (maximum - minimum) * (Random() % 100) / 100;           // TODO: double check: Might be somewhat broken since "AI rolls damage and thus only sees kill sometimes" Test is only at 30% rather than 50
+                rolledDamage[moveIndex] = RandomUniformDefault(RNG_NONE, minimum, maximum);
             } else
             {
                 rolledDamage[moveIndex] = 0;
@@ -7212,6 +7213,9 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
                         if (rolledDamage[moveIndex] > rolledDamage[bestMoveIndex])
                         {
                             bestMoveIndex = moveIndex;
+                        } else
+                        {
+                            // TODO: damaging speed/(Sp)Atk dropping moves
                         }
                     }
                 }
@@ -7419,7 +7423,19 @@ static s32 AI_ClickGoodMoves(enum BattlerId battlerAtk, enum BattlerId battlerDe
     // Explosion
     if (IsExplosionMove(move))
     {
-        //TODO: Explosion Logic
+        if (GetHealthPercentage(battlerAtk) < 10)
+        {
+            score += AI_SCORE_COMPETES_WITH_SLOW_KILL + AI_SCORE_BEATS_COMPETITORS;
+        } else if (GetHealthPercentage(battlerAtk) < 33)
+        {
+            score += ((Random() % 100) < 70) ? 8 : 0;
+        } else if (GetHealthPercentage(battlerAtk) < 66)
+        {
+            score += ((Random() % 100) < 30) ? AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS : 0;
+        } else
+        {
+            score += ((Random() % 100) < 5) ? AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS : 0;
+        }
     }
     // Hazards
     

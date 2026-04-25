@@ -227,15 +227,110 @@ AI_SINGLE_BATTLE_TEST("AI understands nothing kills and picks highest damage mov
 
 AI_SINGLE_BATTLE_TEST("AI rolls damage and thus only sees kill sometimes")
 {
-    PASSES_RANDOMLY(3, 10);
+    PASSES_RANDOMLY(5, 10);
     GIVEN {
         AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
-        PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(1); HP(124); Moves(MOVE_TACKLE); }
+        PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(1); HP(125); Moves(MOVE_TACKLE); }
         OPPONENT(SPECIES_KANGASKHAN) { Level(100); Speed(2); Moves(MOVE_HYPER_BEAM); }
     } WHEN {
         TURN {
             MOVE(player, MOVE_TACKLE);
             SCORE_EQ_VAL(opponent, MOVE_HYPER_BEAM, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_FAST_KILL));
+        }
+    }
+}
+
+AI_SINGLE_BATTLE_TEST("AI likes Explosion depending on HP percent (<10 percent)")
+{
+    enum Move move;
+    
+    PARAMETRIZE { move = MOVE_EXPLOSION; }
+    PARAMETRIZE { move = MOVE_SELF_DESTRUCT; }
+    PARAMETRIZE { move = MOVE_MISTY_EXPLOSION; }
+
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(2); Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Level(100); Speed(1); MaxHP(100); HP(9); Moves(move); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+                                         //default
+                                                             //best damage still sees explosion as good damage (needs to be changed still)
+                                                                                  // Explosion AI
+            SCORE_EQ_VAL(opponent, move, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_COMPETES_WITH_SLOW_KILL + AI_SCORE_BEATS_COMPETITORS));
+        }
+    }
+}
+
+AI_SINGLE_BATTLE_TEST("AI likes Explosion depending on HP percent (<33 percent)")
+{
+    enum Move move;
+    
+    PARAMETRIZE { move = MOVE_EXPLOSION; }
+    PARAMETRIZE { move = MOVE_SELF_DESTRUCT; }
+    PARAMETRIZE { move = MOVE_MISTY_EXPLOSION; }
+
+    PASSES_RANDOMLY(7, 10);
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(2); Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Level(100); Speed(1); MaxHP(100); HP(15); Moves(move); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+                                         //default
+                                                             //best damage still sees explosion as good damage (needs to be changed still)
+                                                                                  // Explosion AI
+            SCORE_EQ_VAL(opponent, move, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + 8));
+        }
+    }
+}
+
+AI_SINGLE_BATTLE_TEST("AI likes Explosion depending on HP percent (<66 percent)")
+{
+    enum Move move;
+    
+    PARAMETRIZE { move = MOVE_EXPLOSION; }
+    PARAMETRIZE { move = MOVE_SELF_DESTRUCT; }
+    PARAMETRIZE { move = MOVE_MISTY_EXPLOSION; }
+
+    PASSES_RANDOMLY(3, 10);
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(2); Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Level(100); Speed(1); MaxHP(100); HP(50); Moves(move); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+                                         //default
+                                                             //best damage still sees explosion as good damage (needs to be changed still)
+                                                                                  // Explosion AI
+            SCORE_EQ_VAL(opponent, move, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS));
+        }
+    }
+}
+
+AI_SINGLE_BATTLE_TEST("AI likes Explosion depending on HP percent (Full HP)")
+{
+    enum Move move;
+    
+    PARAMETRIZE { move = MOVE_EXPLOSION; }
+    PARAMETRIZE { move = MOVE_SELF_DESTRUCT; }
+    PARAMETRIZE { move = MOVE_MISTY_EXPLOSION; }
+
+    PASSES_RANDOMLY(1, 20);
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { Level(100); Speed(2); Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Level(100); Speed(1); MaxHP(100); HP(100); Moves(move); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+                                         //default
+                                                             //best damage still sees explosion as good damage (needs to be changed still)
+                                                                                  // Explosion AI
+            SCORE_EQ_VAL(opponent, move, (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_GOOD_MOVE + AI_SCORE_BEATS_COMPETITORS));
         }
     }
 }
