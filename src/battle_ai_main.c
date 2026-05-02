@@ -7172,7 +7172,7 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
         bool8 atLeastOneKills = FALSE;
         u32 bestMoveIndex = MAX_MON_MOVES;
 
-        // roll damage
+        // roll damage          TODO: ändern damit stat dropping moves auch bewertet werden und ties richtig funktionieren
         for (u32 moveIndex = 0; moveIndex < MAX_MON_MOVES; moveIndex++)
         {
             if (GetMovePower(moves[moveIndex]) != 0 &&
@@ -7197,7 +7197,7 @@ static u32 ChooseMoveOrAction_Singles_Sandbox(enum BattlerId battler)
                 atLeastOneKills = TRUE;
                 bestMoveIndex = MAX_MON_MOVES;
                 gAiThinkingStruct->score[moveIndex] += AI_SCORE_GOOD_MOVE;
-                if (AI_IsFaster(battler, opposingBattler, moves[moveIndex], MOVE_NONE, DONT_CONSIDER_PRIORITY))
+                if (AI_IsFaster(battler, opposingBattler, moves[moveIndex], MOVE_NONE, CONSIDER_PRIORITY))
                 {
                     gAiThinkingStruct->score[moveIndex] += AI_SCORE_FAST_KILL;
                 } else

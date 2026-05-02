@@ -193,6 +193,23 @@ AI_SINGLE_BATTLE_TEST("AI sees fast kills")
     }
 }
 
+AI_SINGLE_BATTLE_TEST("AI sees priority as fast kills")
+{
+    GIVEN {
+        AI_FLAGS(AI_FLAG_STANDARD_TRAINER);
+        PLAYER(SPECIES_WOBBUFFET) { HP(1); Speed(2); Moves(MOVE_TACKLE); }
+        OPPONENT(SPECIES_KANGASKHAN) { Speed(1); Moves(MOVE_PROTECT, MOVE_TACKLE, MOVE_FLAMETHROWER, MOVE_QUICK_ATTACK); }
+    } WHEN {
+        TURN {
+            MOVE(player, MOVE_TACKLE);
+            SCORE_EQ_VAL(opponent, MOVE_PROTECT,        (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE));
+            SCORE_EQ_VAL(opponent, MOVE_TACKLE,         (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_SLOW_KILL));
+            SCORE_EQ_VAL(opponent, MOVE_FLAMETHROWER,   (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_SLOW_KILL));
+            SCORE_EQ_VAL(opponent, MOVE_QUICK_ATTACK,   (AI_SCORE_DEFAULT + AI_SCORE_GOOD_MOVE + AI_SCORE_FAST_KILL));
+        }
+    }
+}
+
 AI_SINGLE_BATTLE_TEST("AI understands Sturdy")
 {
     KNOWN_FAILING;
